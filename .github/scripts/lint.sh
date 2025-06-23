@@ -19,12 +19,12 @@ fi
 
 count=0
 for dir in "${MODULE_DIRS[@]}"; do
-  count=$((count+1))
-  echo "--- [$count] LINT $dir ---"
-  if [[ ! -f "$dir/go.sum" ]]; then
-    go mod tidy -modfile="$dir/go.mod" -modcache="$(go env GOMODCACHE)" -go=1.23 -mod="$dir"
-  fi
-  golangci-lint run --config="$CONFIG" "$dir/..."
+  count=$((count + 1))
+  echo "--- [$count] Проверка $dir ---"
+  pushd "$dir" > /dev/null
+    go mod tidy
+    golangci-lint run --config="$CONFIG" ./...
+  popd > /dev/null
 done
 
 echo "Все $count модуля(-ей) успешно прошли проверку"
