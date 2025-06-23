@@ -1,49 +1,31 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e
 set -x
-
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m'
 
 ROOT="$(git rev-parse --show-toplevel)"
 CONFIG="$ROOT/.github/workflows/golangci.yml"
 
 if [[ ! -f "$CONFIG" ]]; then
-  echo -e "${RED}❌ Конфигурационный файл не найден: $CONFIG${NC}"
+  echo "Конфигурация не найдена: $CONFIG"
   exit 1
 fi
 
 cd "$ROOT/services"
 
-MODULE_DIRS=$(find . -mindepth 1 -type f -name "go.mod" -exec dirname {} \;)
-
-if [[ -z "$MODULE_DIRS" ]]; then
-  echo -e "${RED}⚠️  В services/* не найдено ни одного go.mod${NC}"
+mapfile -t MODULE_DIRS < <(find . -mindepth 1 -type f -name "go.mod" -exec dirname {} \;)
+if [[ ${#MODULE_DIRS[@]} -eq 0 ]]; then
+  echo "Не найден ни один go.mod в services/*"
   exit 1
 fi
 
 count=0
-for dir in $MODULE_DIRS; do
-  ((count++))
-  echo -e "${NC}--- [$count] SERVICE: $dir ---${NC}"
+for dir in "${MODULE_DIRS[@]}"; do
+  count=$((count + 1))
+  echo "--- [$count] Проверка $dir ---"
   pushd "$dir" > /dev/null
-
-  if [[ ! -f go.sum ]]; then
-    echo "→ go mod tidy"
-    go mod tidy
-  fi
-
-  echo "→ golangci-lint run --config=\"$CONFIG\" ./..."
-  if ! golangci-lint run --config="$CONFIG" ./...; then
-    echo -e "${RED}❌ LINT FAILED IN $dir${NC}"
-    popd > /dev/null
-    exit 1
-  fi
-
+    [[ ! -f go.sum ]] && go mod tidy
+    golangci-lint run --config="$CONFIG" ./...
   popd > /dev/null
-  echo -e "${GREEN}✔ $dir OK${NC}"
-  echo ""
 done
 
-echo -e "${GREEN}🎉 ALL $count modules passed golangci-lint!${NC}"
+echo "Все $count модуля(-ей) успешно прошли проверку"
