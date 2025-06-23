@@ -12,7 +12,7 @@ CONFIG_PATH="../.github/workflows/golangci.yml"
 
 echo -e "${NC}0_W_0 Проверка кода...${NC}"
 
-MODULE_DIRS=$(find . -mindepth 2 -name "go.mod" -exec dirname {} \;)
+MODULE_DIRS=$(find . -mindepth 1 -name "go.mod" -exec dirname {} \;)
 
 allModules=0
 
