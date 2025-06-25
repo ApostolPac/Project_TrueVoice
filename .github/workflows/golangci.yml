@@ -23,7 +23,7 @@ jobs:
       - name: Install golangci-lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-            | sh -s -- -b "${{ runner.tool_cache }}/golangci-lint" v1.59.0
+            | sh -s -- -b "${{ runner.tool_cache }}/golangci-lint" v1.60.1
           echo "${{ runner.tool_cache }}/golangci-lint" >> $GITHUB_PATH
           
       - name: Run custom lint script
