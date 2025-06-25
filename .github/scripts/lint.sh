@@ -8,7 +8,7 @@ NC='\033[0m'
 
 cd services
 
-CONFIG_PATH="./.github/workflows/golangci.yml"
+CONFIG_PATH="../.github/workflows/golangci.yml"
 
 echo -e "${NC}0_W_0 Проверка кода...${NC}"
 
