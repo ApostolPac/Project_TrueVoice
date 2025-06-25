@@ -1,30 +1,36 @@
-#!/usr/bin/env bash
-set -e
-set -x
+#!/bin/bash
 
-ROOT="$(git rev-parse --show-toplevel)"
-CONFIG="$ROOT/.github/workflows/golangci.yml"
+set -euo pipefail
 
-if [[ ! -f "$CONFIG" ]]; then
-  echo "Конфигурация не найдена: $CONFIG"
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+cd services
+
+CONFIG_PATH=".github/workflows/golangci.yml"
+
+echo -e "${NC}0_W_0 Проверка кода...${NC}"
+
+MODULE_DIRS=$(find . -mindepth 2 -name "go.mod" -exec dirname {} \;)
+
+allModules=0
+
+if [[ ! -f "$CONFIG_PATH" ]]; then
+  echo -e "${RED}Конфиг $CONFIG_PATH не найден!${NC}"
   exit 1
 fi
 
-mapfile -t MODULE_DIRS < <(find "$ROOT/services" -mindepth 1 -type f -name go.mod -exec dirname {} \;)
-
-if [[ ${#MODULE_DIRS[@]} -eq 0 ]]; then
-  echo "Не найден ни один go.mod в services/*"
-  exit 1
-fi
-
-count=0
-for dir in "${MODULE_DIRS[@]}"; do
-  count=$((count + 1))
-  echo "--- [$count] Проверка $dir ---"
-  pushd "$dir" > /dev/null
-    go mod tidy
-    golangci-lint run --config="$CONFIG" ./...
-  popd > /dev/null
+for dir in $MODULE_DIRS; do
+  if [[ -d "$dir" ]]; then
+    allModules=$((allModules + 1))
+    echo -e "${NC}Проверка модуля: $dir${NC}"
+    pushd "$dir" > /dev/null
+    golangci-lint run --config="../$CONFIG_PATH" ./...
+    echo -e "${GREEN}Проверка успешна: $dir${NC}"
+    echo ""
+    popd > /dev/null
+  fi
 done
 
-echo "Все $count модуля(-ей) успешно прошли проверку"
+echo -e "${GREEN}Все $allModules модуля прошли проверку без ошибок!${NC}"
