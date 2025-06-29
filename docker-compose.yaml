@@ -1,0 +1,192 @@
+version: 3.8
+
+services:
+  gateway-service:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-db:
+        condition: service_started
+      chat-db:
+        condition: service_started
+      history-db:
+        condition: service_started
+      profile-db:
+        condition: service_started
+      serman-db:
+        condition: service_started
+
+    networks:
+      - backend
+
+
+  auth-service:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    container_name: auth
+    environment:
+      - DATABASE_URL=postgres://user:79343443@auth-db:5432/authdb?sslmode=disable
+      - MIGRATIONS_PATH=/migrations
+    volumes:
+      - ./services/auth/migrations:/migrations
+    networks:
+      - backend
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      
+
+  auth-db:
+    image: postgres:15
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    environment:
+      - POSTGRES_DB=authdb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=79343443
+    networks:
+      - backend
+
+
+  chat-service:
+    build:
+      context: ./services/chat
+      dockerfile: Dockerfile
+    container_name: chat
+    environment:
+      - DATABASE_URL=postgres://user:79343443@chat-db:5432/chatdb?sslmode=disable
+      - MIGRATIONS_PATH=/migrations
+    volumes:
+      - ./services/chat/migrations:/migrations
+    networks:
+      - backend
+    depends_on:
+      chat-db:
+        condition: service_healthy
+  chat-db:
+    image: postgres:15
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    environment:
+      - POSTGRES_DB=chatdb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=79343443
+    networks:
+      - backend
+
+
+  history-service:
+    build:
+      context: ./services/history
+      dockerfile: Dockerfile
+    container_name: history
+    environment:
+      - DATABASE_URL=postgres://user:79343443@history-db:5432/historydb?sslmode=disable
+      - MIGRATIONS_PATH=/migrations
+    volumes:
+      - ./services/history/migrations:/migrations
+    networks:
+      - backend
+    depends_on:
+      history-db:
+        condition: service_healthy
+
+  history-db:
+    image: postgres:15
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    environment:
+      - POSTGRES_DB=historydb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=79343443
+    networks:
+      - backend
+
+
+  notification-service:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    container_name: notification
+    networks:
+      - backend
+
+  profile-service:
+    build:
+      context: ./services/profile
+      dockerfile: Dockerfile
+    container_name: profile
+    environment:
+      - DATABASE_URL=postgres://user:79343443@profile-db:5432/profiledb?sslmode=disable
+      - MIGRATIONS_PATH=/migrations
+    volumes:
+      - ./services/profile/migrations:/migrations
+    networks:
+      - backend
+    depends_on:
+      profile-db: 
+        condition: service_healthy
+    
+
+
+  profile-db:
+    image: postgres:15
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    environment:
+      - POSTGRES_DB=profiledb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=79343443
+    networks:
+      - backend
+
+  serman-service:
+    build:  
+      context: ./services/serman
+      dockerfile: Dockerfile
+    container_name: serman
+    environment:
+      - DATABASE_URL=postgres://user:79343443@serman-db:5432/sermandb?sslmode=disable
+      - MIGRATIONS_PATH=/migrations
+    volumes:
+      - ./services/serman/migrations:/migrations
+    networks:
+      - backend
+    depends_on:
+      serman-db:
+        condition: service_healthy
+
+  serman-db:
+    image: postgres:15
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    environment:
+      - POSTGRES_DB=sermandb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=79343443
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
